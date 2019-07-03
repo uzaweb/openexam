@@ -1,0 +1,16 @@
+{
+    "name": "uzaweb\/openexam",
+    "alias": "Openexam",
+    "description": "",
+    "keywords": [],
+    "app_launcher": 1,
+    "app_launcher_route": "admin.openexam.dashboard.index",
+    "icon": "\/vendor\/uzaweb\/openexam\/images\/icon-app.png",
+    "requires": {    	    
+    },
+    "submenu": [{
+        "name": "Openexam",
+        "link": "admin.openexam.dashboard.index"
+    }]
+
+}

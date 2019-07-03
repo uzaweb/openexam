@@ -1,0 +1,50 @@
+import PNotify from 'pnotify/dist/es/PNotifyCompat';
+import  'pnotify/dist/es/PNotifyButtons';
+
+window.PNotify = PNotify;
+
+console.ext = {};
+console.pop = {};
+console.ext.string = function(opt,optOR){
+	opt.text = optOR;
+	return opt;
+};
+console.ext.number = function(opt,optOR){
+	opt.text = optOR;
+	return opt;
+};
+console.ext.object = function(opt,optOR){
+return $.extend( opt, optOR );
+};
+
+    console.pop.success = function(e) {
+	//alert('s')
+	var optDefault = {
+			title: 'Success',
+			text: 'success',
+			type: 'success',
+			hide: true
+	}		
+	if (e) {
+		optDefault = console.ext[typeof(e)](optDefault,e);
+	}
+	return new PNotify(optDefault);
+};
+
+
+console.pop.error = function(e) {
+	
+	var optDefault = {
+		title: 'Error',
+		text: 'Error',
+		type: 'error',
+		hide: false
+	}		
+	if (e) {
+		optDefault = console.ext[typeof(e)](optDefault,e);
+	}
+	return new PNotify(optDefault);
+	console.error('er-->'+e);
+};
+
+

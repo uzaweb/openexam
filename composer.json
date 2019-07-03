@@ -1,0 +1,28 @@
+{
+	"name" : "uzaweb/openexam",
+	"type" : "project",
+	"minimum-stability" : "stable",
+	"autoload" : {
+		"psr-4" : {
+			"Uzaweb\\Openexam\\" : "src/",
+			"Uzaweb\\Openexam\\Tests\\" : "tests/"
+		}
+	},
+	"extra" : {
+		"component" : "package",
+		"laravel" : {
+			"providers" : [
+				"Uzaweb\\Openexam\\OpenexamServiceProvider"
+			]
+		}
+	},
+	"scripts" : {
+		"post-autoload-dump" : [ 
+			"@php ../../../autoload-patch uzaweb/openexam"
+		]
+	},
+	"config" : {
+		"sort-packages" : true,
+		"optimize-autoloader" : true
+	}
+}
