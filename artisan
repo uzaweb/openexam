@@ -1,0 +1,219 @@
+#!/usr/bin/env php
+<?php
+
+define('LARAVEL_START', microtime(true));
+
+/*
+|--------------------------------------------------------------------------
+| Register The Auto Loader
+|--------------------------------------------------------------------------
+|
+| Composer provides a convenient, automatically generated class loader
+| for our application. We just need to utilize it! We'll require it
+| into the script here so that we do not have to worry about the
+| loading of any our classes "manually". Feels great to relax.
+|
+*/
+
+$domainName = getDomainName();
+$mainHome = getMainHome();
+
+//require __DIR__.'/../vendor/autoload.php';
+set_include_path('.:..:/opt/cpanel/ea-php71/root/usr/share/pear');
+
+$domainAppPath = $mainHome . '/rvsitebuildercms/' . $domainName;
+if(!is_dir($mainHome.'/rvsitebuildercms/'.$domainName)) {
+    if(is_dir($mainHome.'/rvsitebuildercms/localhost')) {
+        $domainAppPath = $mainHome.'/rvsitebuildercms/localhost';
+    }
+}
+
+if(file_exists($domainAppPath . '/vendor/autoload.php'))
+{
+    require $domainAppPath . '/vendor/autoload.php';    
+    
+    $packagesPath = $domainAppPath . '/packages';    
+    $vendor_names = scandir($packagesPath);
+    foreach($vendor_names as $vendor_name){
+        if(preg_match("/^\./",$vendor_name)) {continue;}
+        $package_names = scandir($packagesPath . '/' . $vendor_name);
+        foreach($package_names as $package_name){
+            if(preg_match("/^\./",$package_name)) {continue;}
+            $auto_load_file = $packagesPath . '/' . $vendor_name . '/' . $package_name . '/vendor/autoload.php';
+            if(is_file($auto_load_file)){
+                require $auto_load_file;
+            }                         
+        }
+    }    
+       
+} else {
+    echo '<h1>Not found RVSiteBuilder CMS App in '.get_include_path().'<h1>';
+    echo '<pre>
+Please contact your provider with info:
+1. RVSitebuilder CMS App have not install.
+2. Not found vendor path.
+3. Your PHP version not compatible, Our system require PHP 7.1+
+</pre>';
+    exit;
+}
+
+
+//$app = require_once __DIR__.'/../bootstrap/app.php';
+$app = require_once $domainAppPath . '/bootstrap/app.php';
+
+/*
+|--------------------------------------------------------------------------
+| Run The Artisan Application
+|--------------------------------------------------------------------------
+|
+| When we run the console application, the current CLI command will be
+| executed in this console and the response sent back to a terminal
+| or another output device for the developers. Here goes nothing!
+|
+*/
+
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+
+$status = $kernel->handle(
+    $input = new Symfony\Component\Console\Input\ArgvInput,
+    new Symfony\Component\Console\Output\ConsoleOutput
+);
+
+/*
+|--------------------------------------------------------------------------
+| Shutdown The Application
+|--------------------------------------------------------------------------
+|
+| Once Artisan has finished running, we will fire off the shutdown events
+| so that any final work may be done by the application before we shut
+| down the process. This is the last thing to happen to the request.
+|
+*/
+function file_exists_include_path($include_file){
+    $included_path_lists = explode(':',get_include_path());
+    $found = 0;
+    foreach ($included_path_lists as $include_path) {
+        if(file_exists($include_path . '/' . $include_file)){
+            $found = 1;
+            break;
+        }
+    }
+    return $found;
+}
+
+function getMainHome() {
+    $mainHome = '';
+    if(php_sapi_name() === 'cli'){
+        if (posix_getuid() != 0){
+            $testPathInput = dirname(__FILE__);
+        }else{
+            return $mainHome;
+        }
+    }else{
+        $testPathInput = $_SERVER['DOCUMENT_ROOT'];
+    }
+    
+    // case 1: devmmode
+    if(file_exists($testPathInput .'/../storage/devmode')){
+        return dirname($testPathInput . '../');
+    }
+    
+    // case 2: have posix_getpwuid get uid by owner dir
+    if(function_exists('posix_getpwuid')){
+        $stat = stat($testPathInput);
+        $uid = $stat['uid'];
+        $userinfo = posix_getpwuid($uid);
+        if(is_dir($userinfo['dir'])){
+            return $userinfo['dir'];
+        }
+    }
+    
+    // case 3: cpanel have rvsitebuildercms dir in home
+    $paths = preg_split("/\//", $testPathInput);
+    $loopDim = count($paths);    
+    for($i=0; $i < $loopDim; $i++) {
+        $testPath = join('/', $paths);
+        if(is_dir($testPath . '/rvsitebuildercms'))
+        {
+            $mainHome = $testPath;
+            break;
+        }
+        array_pop($paths);
+    }
+    if($mainHome != ''){
+        return $mainHome;
+    }
+    
+    // case 4: other ../
+    if(php_sapi_name() === 'cli'){
+        $mainHome = realpath($testPathInput . '/../../');
+    }else{
+        $mainHome = realpath($testPathInput . '/../');
+    }   
+    
+    return $mainHome;
+}
+
+function getDomainName() {
+    $domainName = '';    
+    if(php_sapi_name() === 'cli'){
+        if (posix_getuid() != 0){
+            $paths = preg_split("/\//", __DIR__);
+            $domainName = array_pop($paths);
+        }        
+    }else{
+        $parts = parse_url($_SERVER['HTTP_HOST']);
+        $domainName = $parts['path'];
+    }    
+    return $domainName;
+}
+
+function getFrameworkVendorPath($filePath = ''){
+    $vendorDir = realpath(dirname($filePath) . '/../../../../../') . '/vendor';
+    return $vendorDir;
+}
+
+function getPackageBaseDir($filePath = ''){
+    $baseDir = realpath(dirname($filePath) . '/../../');
+    return $baseDir;
+}
+
+
+
+
+$kernel->terminate($input, $status);
+
+exit($status);
+
+/*
+|--------------------------------------------------------------------------
+| Run The Artisan Application
+|--------------------------------------------------------------------------
+|
+| When we run the console application, the current CLI command will be
+| executed in this console and the response sent back to a terminal
+| or another output device for the developers. Here goes nothing!
+|
+*/
+
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+
+$status = $kernel->handle(
+    $input = new Symfony\Component\Console\Input\ArgvInput,
+    new Symfony\Component\Console\Output\ConsoleOutput
+);
+
+/*
+|--------------------------------------------------------------------------
+| Shutdown The Application
+|--------------------------------------------------------------------------
+|
+| Once Artisan has finished running, we will fire off the shutdown events
+| so that any final work may be done by the application before we shut
+| down the process. This is the last thing to happen to the request.
+|
+*/
+
+$kernel->terminate($input, $status);
+
+exit($status);
